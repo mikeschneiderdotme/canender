@@ -4,6 +4,7 @@ import FormSelectField from '$/components/atoms/FormSelectField'
 import { zeroForNaN } from '$/utils/zeroForNaN'
 import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
+// App types
 interface DosageSettings {
   ratio: {
     breakfast: number
@@ -23,7 +24,10 @@ interface AppState {
   isCaluclated: boolean
 }
 
+// App Constants
 const dosage: DosageSettings = { ratio: { breakfast: 1, lunch: 2, dinner: 3 }, sensitivity: 8 }
+
+const targetBloodSugar: number = 100
 
 const initialAppState: AppState = {
   currentBloodSugar: 0,
@@ -33,28 +37,9 @@ const initialAppState: AppState = {
 }
 
 export default function Home() {
-  const targetBloodSugar: number = 100
   const [appState, setAppState] = useState<AppState>(initialAppState)
 
-  // Bolus dosage is a function of how many carbs you eat and carb ratio of the meal
-  function calculatedBolus(carbs: number, ratio: number): number {
-    return Math.round(carbs / ratio)
-  }
-
-  // Correction dosage is a function of current blood sugar(cbs) and insulin sensitivity
-  function calculatedCorrection(cbs: number): number {
-    let overTargetLevel = cbs - targetBloodSugar > 0 ? cbs - targetBloodSugar : 0
-    return Math.round(overTargetLevel / dosage.sensitivity)
-  }
-
-  const calculatedDosage = useCallback(() => {
-    return (
-      calculatedBolus(appState.carbohydrates, appState.mealRatio) +
-      calculatedCorrection(appState.currentBloodSugar)
-    )
-  }, [appState.carbohydrates, appState.currentBloodSugar, appState.mealRatio])
-
-  // Parses a string and grabs the correct meal ratio from the DosageSetting object
+  // Get the options for the select form field
   const getRatioOptions = () => {
     const options: { value: string; label: string }[] = [
       {
@@ -72,6 +57,25 @@ export default function Home() {
     ]
     return options
   }
+
+  // Bolus dosage is a function of how many carbs you eat and carb ratio of the meal
+  function calculatedBolus(carbs: number, ratio: number): number {
+    return Math.round(carbs / ratio)
+  }
+
+  // Correction dosage is a function of current blood sugar(cbs) and insulin sensitivity
+  function calculatedCorrection(cbs: number): number {
+    let overTargetLevel = cbs - targetBloodSugar > 0 ? cbs - targetBloodSugar : 0
+    return Math.round(overTargetLevel / dosage.sensitivity)
+  }
+
+  // Callback to manage the calculated Dosage of the application
+  const calculatedDosage = useCallback(() => {
+    return (
+      calculatedBolus(appState.carbohydrates, appState.mealRatio) +
+      calculatedCorrection(appState.currentBloodSugar)
+    )
+  }, [appState.carbohydrates, appState.currentBloodSugar, appState.mealRatio])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     console.log('Sumbitted!')
