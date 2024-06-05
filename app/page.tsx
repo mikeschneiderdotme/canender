@@ -90,7 +90,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col">
+    <main>
       {appState.isCaluclated ? (
         <div>
           <h2>Dosage</h2>
@@ -114,6 +114,7 @@ export default function Home() {
               inputLabel={'Current Blood Sugar'}
               inputType={'number'}
               handleChange={(e: ChangeEvent<HTMLInputElement>) => {
+                e.target.id
                 setAppState((prevState) => ({
                   ...prevState,
                   currentBloodSugar: zeroForNaN(e.target.value),
