@@ -1,4 +1,5 @@
 'use client'
+import FormButton from '$/components/atoms/FormButton'
 import FormField from '$/components/atoms/FormInputField'
 import FormSelectField from '$/components/atoms/FormSelectField'
 import { zeroForNaN } from '$/utils/zeroForNaN'
@@ -106,12 +107,18 @@ export default function Home() {
           <hr />
         </div>
       )}
-      <form onSubmit={handleSubmit} onReset={handleReset} className="flex flex-col m-auto">
+      <form
+        onSubmit={handleSubmit}
+        onReset={handleReset}
+        className={
+          'flex flex-col gap-2 shadow-md bg-slate-400 rounded-md min-h-40 justify-center p-4 m-4'
+        }
+      >
         {!appState.isCaluclated ? (
           <>
             <FormField
               id={'current-blood-sugar-input-field'}
-              inputLabel={'Current Blood Sugar'}
+              label={'Current Blood Sugar'}
               inputType={'number'}
               handleChange={(e: ChangeEvent<HTMLInputElement>) => {
                 e.target.id
@@ -124,7 +131,7 @@ export default function Home() {
             />
             <FormField
               id={'carbohydrates-input-field'}
-              inputLabel={'Carbohydrates'}
+              label={'Carbohydrates'}
               inputType={'number'}
               handleChange={(e: ChangeEvent<HTMLInputElement>) => {
                 setAppState((prevState) => ({
@@ -146,10 +153,10 @@ export default function Home() {
               }}
               value={appState.mealRatio.toString()}
             />
-            <button type="submit">Calculate Dosage</button>
+            <FormButton type="submit">Calculate Dosage</FormButton>
           </>
         ) : (
-          <button type="reset">Reset Form</button>
+          <FormButton type="reset">Reset Form</FormButton>
         )}
       </form>
     </main>
