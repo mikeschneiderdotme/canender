@@ -1,14 +1,18 @@
 'use client'
-import FormField from "$/components/atoms/FormField";
-import { FormEvent, useCallback, useState } from "react";
+import FormButton from '$/components/atoms/FormButton'
+import FormField from '$/components/atoms/FormInputField'
+import FormSelectField from '$/components/atoms/FormSelectField'
+import { zeroForNaN } from '$/utils/zeroForNaN'
+import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
+// App types
 interface DosageSettings {
   ratio: {
     breakfast: number
     lunch: number
     dinner: number
   }
-  // Insulin sensitivity is a value that represents how much your blood sugar drops per 
+  // Insulin sensitivity is a value that represents how much your blood sugar drops per
   // unit of insulin given to the patient. Usually a ratio of insulin : blood sugar decrease
   // written as 1:x where x is the sensitivity value that is stored here.
   sensitivity: number
@@ -17,71 +21,71 @@ interface DosageSettings {
 interface AppState {
   currentBloodSugar: number
   carbohydrates: number
-  calculatedBolus: number
-  calculatedCorrection: number
-  dosage: number
+  mealRatio: number
   isCaluclated: boolean
 }
+
+// App Constants
+const dosage: DosageSettings = { ratio: { breakfast: 3, lunch: 3, dinner: 1.5 }, sensitivity: 8 }
+
+const targetBloodSugar: number = 100
 
 const initialAppState: AppState = {
   currentBloodSugar: 0,
   carbohydrates: 0,
-  calculatedBolus: 0,
-  calculatedCorrection: 0,
-  dosage: 0,
+  mealRatio: 0,
   isCaluclated: false,
 }
 
-
 export default function Home() {
-  const targetBloodSugar: number = 100
-  const dosage: DosageSettings = { ratio: {breakfast: 1.5, lunch: 2, dinner: 2 }, sensitivity: 15 }
   const [appState, setAppState] = useState<AppState>(initialAppState)
 
+  // Get the options for the select form field
+  const getRatioOptions = () => {
+    const options: { value: string; label: string }[] = [
+      {
+        value: '0',
+        label: 'No Meal',
+      },
+      {
+        value: dosage.ratio.breakfast.toString(),
+        label: 'Breakfast',
+      },
+      {
+        value: dosage.ratio.lunch.toString(),
+        label: 'Lunch',
+      },
+      {
+        value: dosage.ratio.dinner.toString(),
+        label: 'Dinner',
+      },
+    ]
+    return options
+  }
+
   // Bolus dosage is a function of how many carbs you eat and carb ratio of the meal
-  function calculatedBolus(carbs:number, ratio: number): number {
+  function calculatedBolus(carbs: number, ratio: number): number {
     return Math.round(carbs / ratio)
   }
 
   // Correction dosage is a function of current blood sugar(cbs) and insulin sensitivity
-  function calculatedCorrection(cbs:number, sensitivity: number): number {
-    let overTargetLevel = (cbs - targetBloodSugar) > 0 ? (cbs - targetBloodSugar) : 0
-    return Math.round(overTargetLevel/ sensitivity)
+  function calculatedCorrection(cbs: number): number {
+    let overTargetLevel = cbs - targetBloodSugar > 0 ? cbs - targetBloodSugar : 0
+    return Math.round(overTargetLevel / dosage.sensitivity)
   }
 
-  // Parses a string and grabs the correct meal ratio from the DosageSetting object
-  function getRatio(meal: string): number {
-    switch (meal) {
-      case 'breakfast':
-        return dosage.ratio.breakfast;
-      case 'lunch':
-        return dosage.ratio.lunch;
-      case 'dinner':
-        return dosage.ratio.dinner;
-      default:
-        return 0;
-    }
-  }
-  
+  // Callback to manage the calculated Dosage of the application
+  const calculatedDosage = useCallback(() => {
+    return (
+      zeroForNaN(calculatedBolus(appState.carbohydrates, appState.mealRatio)) +
+      zeroForNaN(calculatedCorrection(appState.currentBloodSugar))
+    )
+  }, [appState.carbohydrates, appState.currentBloodSugar, appState.mealRatio])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     console.log('Sumbitted!')
     event.preventDefault()
-    const data = new FormData(event.currentTarget.value)
-    let cbs = parseInt(data.get('current-blood-sugar-input-field') as string)
-    let carbs = parseInt(data.get('carbohyudrates-input-field') as string)
-    let meal = data.get('meal-selector') as string
-    let cb = calculatedBolus(carbs, getRatio(meal))
-    let cc = calculatedCorrection(cbs, dosage.sensitivity);
-    const newAppState: AppState = {
-      currentBloodSugar: cbs,
-      carbohydrates: carbs,
-      calculatedBolus: cb,
-      calculatedCorrection: cc,
-      dosage: cb + cc,
-      isCaluclated: true
-    }
-    console.log(newAppState)
-    setAppState(newAppState)
+    setAppState((prevState) => ({ ...prevState, isCaluclated: true }))
   }
 
   function handleReset(event: FormEvent<HTMLFormElement>): void {
@@ -91,27 +95,78 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col">
-      {appState.isCaluclated ? (
-        <div>
-          <h1>Dosage</h1>
-          <div>{appState.dosage}</div>
+    <main>
+      {/* Dev and Debug Render Block */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="flex flex-col gap-2 text-white">
+          <div className="flex flex-col mx-auto w-fit">
+            <div>CBS: {appState.currentBloodSugar}</div>
+            <div>Carbs: {appState.carbohydrates}</div>
+            <div>Meal Ratio: {appState.mealRatio}</div>
+            <div>isCaluclated: {appState.isCaluclated ? 'true' : 'false'}</div>
+          </div>
           <hr />
         </div>
-      ): (<></>)}
-      <form onSubmit={handleSubmit} onReset={handleReset} className='flex flex-col m-auto'>
-        <FormField id={'current-blood-sugar-input-field'} inputLabel={'Current Blood Sugar'} inputType={'number'} />
-        <FormField id={'carbohydrates-input-field'} inputLabel={'Carbohydrates'} inputType={'number'} />
-        <label>
-          <select name='meal-selector' id='meal-selector' defaultValue={'dinner'}>
-            <option value='breakfast'>Breakfast</option>
-            <option value='lunch'>Lunch</option>
-            <option value='dinner'>Dinner</option>
-          </select>
-        </label>
-        <button type='submit'>Calculate Dosage</button>
-        <button type='reset'>Reset Form</button>
+      )}
+      {/* Form Render Block */}
+      <form
+        onSubmit={handleSubmit}
+        onReset={handleReset}
+        className={
+          'flex flex-col gap-2 shadow-md bg-slate-500 rounded-md min-h-40 justify-center p-4 mx-auto my-4 max-w-sm'
+        }
+      >
+        <h1 className={'text-2xl text-center text-amber-100'}>Dosage Calculator</h1>
+        {!appState.isCaluclated ? (
+          <>
+            <FormField
+              id={'current-blood-sugar-input-field'}
+              label={'Current Blood Sugar'}
+              inputType={'number'}
+              handleChange={(e: ChangeEvent<HTMLInputElement>) => {
+                e.target.id
+                setAppState((prevState) => ({
+                  ...prevState,
+                  currentBloodSugar: zeroForNaN(e.target.value),
+                }))
+              }}
+              value={appState.currentBloodSugar.toString()}
+            />
+            <FormSelectField
+              name={'meal-selector'}
+              label={'Meal'}
+              options={getRatioOptions()}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                setAppState((prevState) => ({
+                  ...prevState,
+                  mealRatio: zeroForNaN(e.target.value),
+                }))
+              }}
+              value={appState.mealRatio.toString()}
+            />
+            {appState.mealRatio != 0 && (
+              <FormField
+                id={'carbohydrates-input-field'}
+                label={'Carbohydrates'}
+                inputType={'number'}
+                handleChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  setAppState((prevState) => ({
+                    ...prevState,
+                    carbohydrates: zeroForNaN(e.target.value),
+                  }))
+                }}
+                value={appState.carbohydrates.toString()}
+              />
+            )}
+            <FormButton type="submit">Calculate Dosage</FormButton>
+          </>
+        ) : (
+          <>
+            <span className={'text-center text-lime-200 text-3xl'}>{calculatedDosage()} units</span>
+            <FormButton type="reset">Reset Form</FormButton>
+          </>
+        )}
       </form>
     </main>
-  );
+  )
 }

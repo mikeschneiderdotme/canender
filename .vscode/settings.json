@@ -1,0 +1,7 @@
+{
+    "editor.formatOnSave": true,
+    "prettier.printWidth": 100,
+    "prettier.jsxSingleQuote": true,
+    "prettier.singleQuote": true,
+    "prettier.configPath": "/Users/michaelschneider/Desktop/workspace/canender/.prettierrc"
+}
