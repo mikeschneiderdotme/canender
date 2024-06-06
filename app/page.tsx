@@ -5,13 +5,14 @@ import FormSelectField from '$/components/atoms/FormSelectField'
 import { zeroForNaN } from '$/utils/zeroForNaN'
 import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
+interface Ratio {
+  label: string
+  value: number
+}
+
 // App types
 interface DosageSettings {
-  ratio: {
-    breakfast: number
-    lunch: number
-    dinner: number
-  }
+  ratios: Ratio[]
   // Insulin sensitivity is a value that represents how much your blood sugar drops per
   // unit of insulin given to the patient. Usually a ratio of insulin : blood sugar decrease
   // written as 1:x where x is the sensitivity value that is stored here.
@@ -21,51 +22,56 @@ interface DosageSettings {
 interface AppState {
   currentBloodSugar: number
   carbohydrates: number
-  mealRatio: number
+  mealRatio: Ratio
   isCaluclated: boolean
 }
 
 // App Constants
-const dosage: DosageSettings = { ratio: { breakfast: 3, lunch: 3, dinner: 1.5 }, sensitivity: 8 }
+const dosage: DosageSettings = {
+  ratios: [
+    {
+      label: 'No Meal',
+      value: 0,
+    },
+    {
+      label: 'Breakfast',
+      value: 3,
+    },
+    {
+      label: 'Lunch',
+      value: 3,
+    },
+    {
+      label: 'Dinner',
+      value: 1.5,
+    },
+  ],
+  sensitivity: 8,
+}
 
 const targetBloodSugar: number = 100
 
 const initialAppState: AppState = {
   currentBloodSugar: 0,
   carbohydrates: 0,
-  mealRatio: 0,
+  mealRatio: dosage.ratios[0],
   isCaluclated: false,
 }
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>(initialAppState)
 
-  // Get the options for the select form field
-  const getRatioOptions = () => {
-    const options: { value: string; label: string }[] = [
-      {
-        value: '0',
-        label: 'No Meal',
-      },
-      {
-        value: dosage.ratio.breakfast.toString(),
-        label: 'Breakfast',
-      },
-      {
-        value: dosage.ratio.lunch.toString(),
-        label: 'Lunch',
-      },
-      {
-        value: dosage.ratio.dinner.toString(),
-        label: 'Dinner',
-      },
-    ]
-    return options
-  }
-
   // Bolus dosage is a function of how many carbs you eat and carb ratio of the meal
   function calculatedBolus(carbs: number, ratio: number): number {
     return Math.round(carbs / ratio)
+  }
+
+  function findRatio(meal: string): Ratio {
+    let retrieved = dosage.ratios.find((ratio) => {
+      if (ratio.label === meal) return ratio
+    })
+
+    return retrieved ? retrieved : dosage.ratios[0]
   }
 
   // Correction dosage is a function of current blood sugar(cbs) and insulin sensitivity
@@ -77,7 +83,7 @@ export default function Home() {
   // Callback to manage the calculated Dosage of the application
   const calculatedDosage = useCallback(() => {
     return (
-      zeroForNaN(calculatedBolus(appState.carbohydrates, appState.mealRatio)) +
+      zeroForNaN(calculatedBolus(appState.carbohydrates, appState.mealRatio.value)) +
       zeroForNaN(calculatedCorrection(appState.currentBloodSugar))
     )
   }, [appState.carbohydrates, appState.currentBloodSugar, appState.mealRatio])
@@ -102,7 +108,7 @@ export default function Home() {
           <div className="flex flex-col mx-auto w-fit">
             <div>CBS: {appState.currentBloodSugar}</div>
             <div>Carbs: {appState.carbohydrates}</div>
-            <div>Meal Ratio: {appState.mealRatio}</div>
+            <div>Meal Ratio: {appState.mealRatio.value}</div>
             <div>isCaluclated: {appState.isCaluclated ? 'true' : 'false'}</div>
           </div>
           <hr />
@@ -135,16 +141,18 @@ export default function Home() {
             <FormSelectField
               name={'meal-selector'}
               label={'Meal'}
-              options={getRatioOptions()}
+              options={dosage.ratios.map((ratio) => {
+                return { value: ratio.label, label: ratio.label }
+              })}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 setAppState((prevState) => ({
                   ...prevState,
-                  mealRatio: zeroForNaN(e.target.value),
+                  mealRatio: findRatio(e.target.value),
                 }))
               }}
-              value={appState.mealRatio.toString()}
+              value={appState.mealRatio.label}
             />
-            {appState.mealRatio != 0 && (
+            {appState.mealRatio.value != 0 && (
               <FormField
                 id={'carbohydrates-input-field'}
                 label={'Carbohydrates'}
