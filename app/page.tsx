@@ -26,7 +26,7 @@ interface AppState {
 }
 
 // App Constants
-const dosage: DosageSettings = { ratio: { breakfast: 1, lunch: 2, dinner: 3 }, sensitivity: 8 }
+const dosage: DosageSettings = { ratio: { breakfast: 3, lunch: 3, dinner: 1.5 }, sensitivity: 8 }
 
 const targetBloodSugar: number = 100
 
