@@ -33,7 +33,7 @@ const targetBloodSugar: number = 100
 const initialAppState: AppState = {
   currentBloodSugar: 0,
   carbohydrates: 0,
-  mealRatio: dosage.ratio.dinner,
+  mealRatio: 0,
   isCaluclated: false,
 }
 
@@ -43,6 +43,10 @@ export default function Home() {
   // Get the options for the select form field
   const getRatioOptions = () => {
     const options: { value: string; label: string }[] = [
+      {
+        value: '0',
+        label: 'No Meal',
+      },
       {
         value: dosage.ratio.breakfast.toString(),
         label: 'Breakfast',
@@ -73,8 +77,8 @@ export default function Home() {
   // Callback to manage the calculated Dosage of the application
   const calculatedDosage = useCallback(() => {
     return (
-      calculatedBolus(appState.carbohydrates, appState.mealRatio) +
-      calculatedCorrection(appState.currentBloodSugar)
+      zeroForNaN(calculatedBolus(appState.carbohydrates, appState.mealRatio)) +
+      zeroForNaN(calculatedCorrection(appState.currentBloodSugar))
     )
   }, [appState.carbohydrates, appState.currentBloodSugar, appState.mealRatio])
 
@@ -92,28 +96,27 @@ export default function Home() {
 
   return (
     <main>
-      {appState.isCaluclated ? (
-        <div>
-          <h2>Dosage</h2>
-          <div>{calculatedDosage()}</div>
-        </div>
-      ) : (
-        <div>
-          <h1>AppState</h1>
-          <div>CBS: {appState.currentBloodSugar}</div>
-          <div>Carbs: {appState.carbohydrates}</div>
-          <div>Meal Ratio: {appState.mealRatio}</div>
-          <div>isCaluclated: {appState.isCaluclated ? 'true' : 'false'}</div>
+      {/* Dev and Debug Render Block */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="flex flex-col gap-2 text-white">
+          <div className="flex flex-col mx-auto w-fit">
+            <div>CBS: {appState.currentBloodSugar}</div>
+            <div>Carbs: {appState.carbohydrates}</div>
+            <div>Meal Ratio: {appState.mealRatio}</div>
+            <div>isCaluclated: {appState.isCaluclated ? 'true' : 'false'}</div>
+          </div>
           <hr />
         </div>
       )}
+      {/* Form Render Block */}
       <form
         onSubmit={handleSubmit}
         onReset={handleReset}
         className={
-          'flex flex-col gap-2 shadow-md bg-slate-400 rounded-md min-h-40 justify-center p-4 m-4'
+          'flex flex-col gap-2 shadow-md bg-slate-500 rounded-md min-h-40 justify-center p-4 mx-auto my-4 max-w-sm'
         }
       >
+        <h1 className={'text-2xl text-center text-amber-100'}>Dosage Calculator</h1>
         {!appState.isCaluclated ? (
           <>
             <FormField
@@ -129,18 +132,6 @@ export default function Home() {
               }}
               value={appState.currentBloodSugar.toString()}
             />
-            <FormField
-              id={'carbohydrates-input-field'}
-              label={'Carbohydrates'}
-              inputType={'number'}
-              handleChange={(e: ChangeEvent<HTMLInputElement>) => {
-                setAppState((prevState) => ({
-                  ...prevState,
-                  carbohydrates: zeroForNaN(e.target.value),
-                }))
-              }}
-              value={appState.carbohydrates.toString()}
-            />
             <FormSelectField
               name={'meal-selector'}
               label={'Meal'}
@@ -153,10 +144,27 @@ export default function Home() {
               }}
               value={appState.mealRatio.toString()}
             />
+            {appState.mealRatio != 0 && (
+              <FormField
+                id={'carbohydrates-input-field'}
+                label={'Carbohydrates'}
+                inputType={'number'}
+                handleChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  setAppState((prevState) => ({
+                    ...prevState,
+                    carbohydrates: zeroForNaN(e.target.value),
+                  }))
+                }}
+                value={appState.carbohydrates.toString()}
+              />
+            )}
             <FormButton type="submit">Calculate Dosage</FormButton>
           </>
         ) : (
-          <FormButton type="reset">Reset Form</FormButton>
+          <>
+            <span className={'text-center text-lime-200 text-3xl'}>{calculatedDosage()} units</span>
+            <FormButton type="reset">Reset Form</FormButton>
+          </>
         )}
       </form>
     </main>
