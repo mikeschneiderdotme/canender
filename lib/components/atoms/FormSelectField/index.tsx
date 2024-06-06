@@ -12,12 +12,17 @@ const Select: React.FC<SelectProps> = ({ name, label, options, value, onChange, 
     <>
       <label
         htmlFor={name}
-        className={`flex flex-col gap-2 justify-center bg-red-500 ${className}`}
+        className={`flex flex-col gap-2 justify-center h-12 bg-transparent rounded-md border-2 shadow-md text-amber-100 border-amber-100 my-2 ${className}`}
       >
-        <h2>{label}</h2>
-        <select name={name} value={value} onChange={onChange}>
+        <span className={'bg-slate-500 absolute -translate-y-6 translate-x-2 px-2'}>{label}</span>
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={'bg-transparent h-full focus:outline-none mx-4'}
+        >
           {options.map((option, index) => (
-            <option key={index} value={option.value}>
+            <option key={index} value={option.value} className={''}>
               {option.label}
             </option>
           ))}
