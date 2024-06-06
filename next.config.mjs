@@ -9,6 +9,8 @@ const nextConfig = {
   sassOptions: {
     includePaths: [path.join(__dirname, "lib/styles")],
   },
+  output: "export",
+  basPath: "/canender",
   async redirects() {
       return [
         {
