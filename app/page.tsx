@@ -2,40 +2,19 @@
 import FormButton from '$/components/atoms/FormButton'
 import FormField from '$/components/atoms/FormInputField'
 import FormSelectField from '$/components/atoms/FormSelectField'
-import { Treatment, Dosage, Meal } from '$/data'
+import { treatment } from '$/data/settings'
+import { Meal } from '$/data/treamtmentModels'
 import useTreatment from '$/hooks/useTreatment'
 import { zeroForNaN } from '$/utils/zeroForNaN'
 import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
+// The AppState object holds the information from the form as well as a flag
+// that is used to determine if the dosage has been calculated by the user.
 interface AppState {
   currentBloodSugar: number
   carbohydrates: number
   meal: Meal
   isCaluclated: boolean
-}
-
-// App Constants
-const treatment: Treatment = {
-  id: 1,
-  dosage: [
-    {
-      meal: Meal.NoMeal,
-      ratio: 0,
-    },
-    {
-      meal: Meal.Breakfast,
-      ratio: 3,
-    },
-    {
-      meal: Meal.Lunch,
-      ratio: 3,
-    },
-    {
-      meal: Meal.Dinner,
-      ratio: 1.5,
-    },
-  ],
-  sensitivity: 5,
 }
 
 const initialAppState: AppState = {
@@ -46,14 +25,18 @@ const initialAppState: AppState = {
 }
 
 export default function Home() {
+  // State and Logic
   const [appState, setAppState] = useState<AppState>(initialAppState)
   const { getDose } = useTreatment({ treatment })
 
+  // This callback triggers when form data changes and returns the calculated dosage based on
+  // the current AppState
   const dose = useCallback((): string => {
     let result = getDose(appState.meal, appState.currentBloodSugar, appState.carbohydrates)
     return result.toString()
   }, [getDose, appState.meal, appState.currentBloodSugar, appState.carbohydrates])
 
+  // Form Controls
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     console.log('Sumbitted!')
     event.preventDefault()

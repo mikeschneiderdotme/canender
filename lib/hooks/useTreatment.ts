@@ -1,4 +1,4 @@
-import { Treatment, Dosage, Meal } from "$/data"
+import { Treatment, Meal, Dosage } from "$/data/treamtmentModels"
 
 
 interface Props {
