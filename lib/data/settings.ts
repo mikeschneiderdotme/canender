@@ -17,7 +17,7 @@ export const treatment: Treatment = {
       },
       {
         meal: Meal.Dinner,
-        ratio: 1,
+        ratio: 1.3,
       },
     ],
     sensitivity: 4,
